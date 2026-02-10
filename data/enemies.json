@@ -1,0 +1,61 @@
+[
+    {"name": "Jaw Worm", "type": "NORMAL", "act": 1, "hp_min": 40, "hp_max": 44, "moves": [{"name": "Chomp", "damage": 11}, {"name": "Thrash", "damage": 7, "block": 5}, {"name": "Bellow", "strength_gain": 3, "block": 6}]},
+    {"name": "Cultist", "type": "NORMAL", "act": 1, "hp_min": 48, "hp_max": 54, "moves": [{"name": "Incantation", "ritual": 3}, {"name": "Dark Strike", "damage": 6}]},
+    {"name": "Red Louse", "type": "NORMAL", "act": 1, "hp_min": 10, "hp_max": 15, "moves": [{"name": "Bite", "damage_min": 5, "damage_max": 7}, {"name": "Grow", "strength_gain": 3}]},
+    {"name": "Green Louse", "type": "NORMAL", "act": 1, "hp_min": 11, "hp_max": 17, "moves": [{"name": "Bite", "damage_min": 5, "damage_max": 7}, {"name": "Spit Web", "weak": 2}]},
+    {"name": "Blue Slaver", "type": "NORMAL", "act": 1, "hp_min": 46, "hp_max": 50, "moves": [{"name": "Stab", "damage": 12}, {"name": "Rake", "damage": 7, "weak": 1}]},
+    {"name": "Red Slaver", "type": "NORMAL", "act": 1, "hp_min": 46, "hp_max": 50, "moves": [{"name": "Stab", "damage": 13}, {"name": "Scrape", "damage": 8, "vulnerable": 1}, {"name": "Entangle", "effect": "cannot_play_attacks"}]},
+    {"name": "Acid Slime (M)", "type": "NORMAL", "act": 1, "hp_min": 28, "hp_max": 32, "moves": [{"name": "Corrosive Spit", "damage": 7, "add_slimed": 1}, {"name": "Tackle", "damage": 10}, {"name": "Lick", "weak": 1}]},
+    {"name": "Spike Slime (M)", "type": "NORMAL", "act": 1, "hp_min": 28, "hp_max": 32, "moves": [{"name": "Flame Tackle", "damage": 8, "add_slimed": 1}, {"name": "Lick", "frail": 1}]},
+    {"name": "Fungi Beast", "type": "NORMAL", "act": 1, "hp_min": 22, "hp_max": 28, "moves": [{"name": "Bite", "damage": 6}, {"name": "Grow", "strength_gain": 3}]},
+    {"name": "Looter", "type": "NORMAL", "act": 1, "hp_min": 44, "hp_max": 48, "moves": [{"name": "Mug", "damage": 10, "steal_gold": 15}, {"name": "Lunge", "damage": 12}, {"name": "Smoke Bomb", "effect": "escape"}]},
+    {"name": "Fat Gremlin", "type": "NORMAL", "act": 1, "hp_min": 13, "hp_max": 17, "moves": [{"name": "Smash", "damage": 4, "weak": 1}]},
+    {"name": "Mad Gremlin", "type": "NORMAL", "act": 1, "hp_min": 20, "hp_max": 24, "moves": [{"name": "Scratch", "damage": 4}]},
+    {"name": "Sneaky Gremlin", "type": "NORMAL", "act": 1, "hp_min": 10, "hp_max": 14, "moves": [{"name": "Puncture", "damage": 9}]},
+    {"name": "Shield Gremlin", "type": "NORMAL", "act": 1, "hp_min": 12, "hp_max": 15, "moves": [{"name": "Protect", "block_ally": 7}, {"name": "Shield Bash", "damage": 6}]},
+    {"name": "Gremlin Wizard", "type": "NORMAL", "act": 1, "hp_min": 21, "hp_max": 25, "moves": [{"name": "Charging", "effect": "charging"}, {"name": "Ultimate Blast", "damage": 25}]},
+
+    {"name": "Gremlin Nob", "type": "ELITE", "act": 1, "hp_min": 106, "hp_max": 110, "moves": [{"name": "Bellow", "effect": "enrage_on_skills", "enrage": 2}, {"name": "Rush", "damage": 14}, {"name": "Skull Bash", "damage": 8, "vulnerable": 2}]},
+    {"name": "Lagavulin", "type": "ELITE", "act": 1, "hp_min": 109, "hp_max": 112, "moves": [{"name": "Sleep", "block": 8, "metallicize": 8}, {"name": "Attack", "damage": 18}, {"name": "Siphon Soul", "debuff_strength": -1, "debuff_dexterity": -1}]},
+    {"name": "Sentry", "type": "ELITE", "act": 1, "hp_min": 38, "hp_max": 42, "moves": [{"name": "Bolt", "damage": 9}, {"name": "Beam", "add_dazed": 2}]},
+
+    {"name": "The Guardian", "type": "BOSS", "act": 1, "hp_min": 240, "hp_max": 240, "moves": [{"name": "Fierce Bash", "damage": 32}, {"name": "Whirlwind", "damage": 5, "hits": 4}, {"name": "Charge Up", "block": 9}, {"name": "Twin Slam", "damage": 8, "hits": 2}, {"name": "Roll Attack", "damage": 9}, {"name": "Mode Shift", "effect": "defensive_mode"}]},
+    {"name": "Hexaghost", "type": "BOSS", "act": 1, "hp_min": 250, "hp_max": 250, "moves": [{"name": "Activate", "effect": "charge_orbs"}, {"name": "Divider", "damage": 6, "hits": 6}, {"name": "Sear", "damage": 6, "add_burn": 1}, {"name": "Tackle", "damage": 5, "hits": 2}, {"name": "Inferno", "damage": 2, "hits": 6, "add_burn": 3}]},
+    {"name": "Slime Boss", "type": "BOSS", "act": 1, "hp_min": 140, "hp_max": 140, "moves": [{"name": "Goop Spray", "add_slimed": 3}, {"name": "Preparing", "effect": "next_turn_slam"}, {"name": "Slam", "damage": 35}, {"name": "Split", "effect": "split_at_half_hp"}]},
+
+    {"name": "Chosen", "type": "NORMAL", "act": 2, "hp_min": 95, "hp_max": 99, "moves": [{"name": "Poke", "damage": 5, "hits": 2}, {"name": "Debilitate", "vulnerable": 2, "weak": 2}, {"name": "Hex", "effect": "add_dazed_on_non_attack"}]},
+    {"name": "Byrd", "type": "NORMAL", "act": 2, "hp_min": 25, "hp_max": 31, "moves": [{"name": "Peck", "damage": 1, "hits": 5}, {"name": "Fly", "effect": "flight"}, {"name": "Headbutt", "damage": 3}]},
+    {"name": "Shelled Parasite", "type": "NORMAL", "act": 2, "hp_min": 68, "hp_max": 72, "moves": [{"name": "Double Strike", "damage": 6, "hits": 2}, {"name": "Fell", "damage": 18, "add_wound": 2}, {"name": "Stunned", "effect": "stunned"}]},
+    {"name": "Spheric Guardian", "type": "NORMAL", "act": 2, "hp_min": 20, "hp_max": 20, "moves": [{"name": "Slam", "damage": 10}, {"name": "Activate", "block": 25, "frail": 5}]},
+    {"name": "Snake Plant", "type": "NORMAL", "act": 2, "hp_min": 75, "hp_max": 79, "moves": [{"name": "Chomp", "damage": 7, "hits": 3}, {"name": "Enfeebling Spores", "weak": 2, "frail": 2}]},
+    {"name": "Centurion", "type": "NORMAL", "act": 2, "hp_min": 76, "hp_max": 80, "moves": [{"name": "Slash", "damage": 12}, {"name": "Fury", "damage": 6, "hits": 3}]},
+    {"name": "Mystic", "type": "NORMAL", "act": 2, "hp_min": 48, "hp_max": 56, "moves": [{"name": "Heal", "heal_ally": 16}, {"name": "Bolt", "damage": 8, "frail": 1}]},
+    {"name": "Snecko", "type": "NORMAL", "act": 2, "hp_min": 114, "hp_max": 120, "moves": [{"name": "Perplexing Glare", "effect": "confused"}, {"name": "Bite", "damage": 15}, {"name": "Tail Whip", "damage": 8, "vulnerable": 2}]},
+    {"name": "Book of Stabbing", "type": "NORMAL", "act": 2, "hp_min": 160, "hp_max": 168, "moves": [{"name": "Multi Stab", "damage": 6, "hits_escalating": true}]},
+
+    {"name": "Gremlin Leader", "type": "ELITE", "act": 2, "hp_min": 140, "hp_max": 148, "moves": [{"name": "Encourage", "buff_allies_strength": 3, "block_allies": 6}, {"name": "Rally", "effect": "summon_gremlins"}]},
+    {"name": "Slavers", "type": "ELITE", "act": 2, "hp_min": 46, "hp_max": 50, "moves": [{"name": "Note", "effect": "three_slavers_fight"}]},
+
+    {"name": "The Champ", "type": "BOSS", "act": 2, "hp_min": 420, "hp_max": 420, "moves": [{"name": "Heavy Slash", "damage": 16}, {"name": "Defensive Stance", "block": 15, "metallicize": 5}, {"name": "Face Slap", "damage": 12, "frail": 2}, {"name": "Gloat", "strength_gain": 2}, {"name": "Execute", "damage": 10, "hits": 2}, {"name": "Anger", "effect": "remove_debuffs_phase2"}]},
+    {"name": "The Collector", "type": "BOSS", "act": 2, "hp_min": 282, "hp_max": 300, "moves": [{"name": "Spawn", "effect": "summon_torch_heads"}, {"name": "Fireball", "damage": 18}, {"name": "Mega Debuff", "vulnerable": 3, "weak": 3, "frail": 3}]},
+    {"name": "Bronze Automaton", "type": "BOSS", "act": 2, "hp_min": 300, "hp_max": 300, "moves": [{"name": "Flail", "damage": 7, "hits": 2}, {"name": "Boost", "strength_gain": 3}, {"name": "HYPER BEAM", "damage": 45}, {"name": "Stunned", "effect": "stunned_after_hyper_beam"}]},
+
+    {"name": "Darklings", "type": "NORMAL", "act": 3, "hp_min": 48, "hp_max": 56, "moves": [{"name": "Nip", "damage": 7}, {"name": "Harden", "block": 12}, {"name": "Revive", "effect": "revive_unless_all_killed"}]},
+    {"name": "Spire Growth", "type": "NORMAL", "act": 3, "hp_min": 170, "hp_max": 190, "moves": [{"name": "Quick Tackle", "damage": 16}, {"name": "Smash", "damage": 22}, {"name": "Constrict", "effect": "constricted_damage_per_turn"}]},
+    {"name": "Transient", "type": "NORMAL", "act": 3, "hp_min": 999, "hp_max": 999, "moves": [{"name": "Attack", "damage": 30, "escalating": true}, {"name": "Fade", "effect": "lose_10hp_per_turn_flee_after_5"}]},
+    {"name": "Reptomancer", "type": "NORMAL", "act": 3, "hp_min": 180, "hp_max": 190, "moves": [{"name": "Summon Daggers", "effect": "summon_daggers"}, {"name": "Snake Strike", "damage": 13}, {"name": "Big Bite", "damage": 30}]},
+    {"name": "Writhing Mass", "type": "NORMAL", "act": 3, "hp_min": 160, "hp_max": 160, "moves": [{"name": "Implant", "damage": 15, "heal_on_hit": true}, {"name": "Flail", "damage": 16}, {"name": "Wither", "damage": 10, "weak": 2, "vulnerable": 2}]},
+    {"name": "Maw", "type": "NORMAL", "act": 3, "hp_min": 300, "hp_max": 300, "moves": [{"name": "Slam", "damage": 25}, {"name": "Drool", "weak": 2, "frail": 2}, {"name": "Nom", "damage": 5, "hits": 3}]},
+
+    {"name": "Giant Head", "type": "ELITE", "act": 3, "hp_min": 500, "hp_max": 500, "moves": [{"name": "Count", "effect": "charges_up"}, {"name": "It Is Time", "damage": 40}, {"name": "Glare", "weak": 1}]},
+    {"name": "Nemesis", "type": "ELITE", "act": 3, "hp_min": 185, "hp_max": 200, "moves": [{"name": "Scythe", "damage": 45}, {"name": "Debilitate", "add_burn": 3}, {"name": "Intangible", "effect": "intangible_alternating"}]},
+
+    {"name": "Awakened One", "type": "BOSS", "act": 3, "hp_min": 300, "hp_max": 300, "moves": [{"name": "Slash", "damage": 20}, {"name": "Soul Strike", "damage": 6, "hits": 4}, {"name": "Rebirth", "effect": "phase_2_full_heal_gain_strength"}]},
+    {"name": "Time Eater", "type": "BOSS", "act": 3, "hp_min": 456, "hp_max": 456, "moves": [{"name": "Reverberate", "damage": 7, "hits": 3}, {"name": "Head Slam", "damage": 26, "draw_reduction": 1}, {"name": "Ripple", "damage": 20}, {"name": "Haste", "effect": "after_12_cards_heal_and_buff"}]},
+    {"name": "Donu", "type": "BOSS", "act": 3, "hp_min": 250, "hp_max": 250, "moves": [{"name": "Circle of Power", "damage": 10, "hits": 2}, {"name": "Beam", "damage": 10}]},
+    {"name": "Deca", "type": "BOSS", "act": 3, "hp_min": 250, "hp_max": 250, "moves": [{"name": "Square of Protection", "block_ally": 16}, {"name": "Beam", "damage": 10}]},
+
+    {"name": "Spear", "type": "ELITE", "act": 4, "hp_min": 160, "hp_max": 160, "moves": [{"name": "Burn Strike", "damage": 5, "hits": 2, "add_burn": 1}, {"name": "Skewer", "damage": 10, "hits": 3}]},
+    {"name": "Shield", "type": "ELITE", "act": 4, "hp_min": 200, "hp_max": 200, "moves": [{"name": "Bash", "damage": 12, "frail": 2}, {"name": "Fortify", "block": 30}, {"name": "Smash", "damage": 14}]},
+    {"name": "Corrupt Heart", "type": "BOSS", "act": 4, "hp_min": 750, "hp_max": 800, "moves": [{"name": "Blood Shots", "damage": 2, "hits": 15}, {"name": "Echo", "damage": 40}, {"name": "Debilitate", "vulnerable": 2, "weak": 2, "frail": 2}, {"name": "Buff", "effect": "gain_2_strength_2_artifact_beat_of_death"}]}
+]

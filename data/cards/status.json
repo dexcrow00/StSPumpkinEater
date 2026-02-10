@@ -1,0 +1,7 @@
+[
+    {"name": "Burn", "type": "STATUS", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. At the end of your turn, take 2 damage.", "effects": {"end_turn_damage": 2}, "keywords": ["unplayable"]},
+    {"name": "Dazed", "type": "STATUS", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. Ethereal.", "effects": {}, "keywords": ["unplayable", "ethereal"]},
+    {"name": "Slimed", "type": "STATUS", "rarity": "SPECIAL", "cost": 1, "description": "Exhaust.", "effects": {}, "keywords": ["exhaust"]},
+    {"name": "Void", "type": "STATUS", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. Ethereal. When this card is drawn, lose 1 Energy.", "effects": {"energy_loss_on_draw": 1}, "keywords": ["unplayable", "ethereal"]},
+    {"name": "Wound", "type": "STATUS", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable.", "effects": {}, "keywords": ["unplayable"]}
+]

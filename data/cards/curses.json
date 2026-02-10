@@ -1,0 +1,16 @@
+[
+    {"name": "Ascender's Bane", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. Ethereal. Cannot be removed.", "effects": {}, "keywords": ["unplayable", "ethereal"]},
+    {"name": "Clumsy", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. Ethereal.", "effects": {}, "keywords": ["unplayable", "ethereal"]},
+    {"name": "Curse of the Bell", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. Cannot be removed.", "effects": {}, "keywords": ["unplayable"]},
+    {"name": "Decay", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. At the end of your turn, take 2 damage.", "effects": {"end_turn_damage": 2}, "keywords": ["unplayable"]},
+    {"name": "Doubt", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. At the end of your turn, gain 1 Weak.", "effects": {"end_turn_weak": 1}, "keywords": ["unplayable"]},
+    {"name": "Injury", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable.", "effects": {}, "keywords": ["unplayable"]},
+    {"name": "Necronomicurse", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. There is no escape from this Curse.", "effects": {"unremovable_special": true}, "keywords": ["unplayable"]},
+    {"name": "Normality", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. You cannot play more than 3 cards this turn.", "effects": {"max_cards_per_turn": 3}, "keywords": ["unplayable"]},
+    {"name": "Pain", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. While in hand, lose 1 HP whenever you play a card.", "effects": {"hp_loss_per_card_played": 1}, "keywords": ["unplayable"]},
+    {"name": "Parasite", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. If removed from your deck, lose 3 Max HP.", "effects": {"max_hp_loss_on_remove": 3}, "keywords": ["unplayable"]},
+    {"name": "Pride", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Innate. At the end of your turn, shuffle a copy of Pride into your draw pile.", "effects": {"copy_self": true}, "keywords": ["innate"]},
+    {"name": "Regret", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. At the end of your turn, lose HP equal to the number of cards in your hand.", "effects": {"hp_loss_from_hand_size": true}, "keywords": ["unplayable"]},
+    {"name": "Shame", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. At the end of your turn, gain 1 Frail.", "effects": {"end_turn_frail": 1}, "keywords": ["unplayable"]},
+    {"name": "Writhe", "type": "CURSE", "rarity": "SPECIAL", "cost": -2, "description": "Unplayable. Innate.", "effects": {}, "keywords": ["unplayable", "innate"]}
+]
