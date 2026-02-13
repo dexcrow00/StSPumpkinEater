@@ -112,6 +112,7 @@ def load_relics() -> list[Relic]:
             rarity=rarity,
             description=entry.get("description", ""),
             character=character,
+            effects=entry.get("effects", {}),
         ))
     return relics
 

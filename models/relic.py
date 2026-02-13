@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
+from typing import Any
 
 from .card import Character
 
@@ -22,6 +23,7 @@ class Relic:
     rarity: RelicRarity
     description: str
     character: Character = Character.NEUTRAL  # NEUTRAL = available to all
+    effects: dict[str, Any] = field(default_factory=dict)
 
     def __hash__(self) -> int:
         return hash(self.name)

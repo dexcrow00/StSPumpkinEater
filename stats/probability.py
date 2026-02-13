@@ -2,10 +2,53 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from math import comb
 
 from models.card import Card, CardType
 from models.deck import Deck
+from models.relic import Relic
+
+
+@dataclass
+class RelicCombatModifiers:
+    """Aggregated combat-relevant modifiers from a set of relics."""
+    energy: int = 0
+    strength: int = 0
+    dexterity: int = 0
+    draw: int = 0
+    energy_turn1: int = 0
+    strength_turn1: int = 0
+    vulnerable: bool = False
+    weak: bool = False
+    vuln_multiplier: float | None = None
+    weak_multiplier: float | None = None
+    block_start: int = 0
+
+
+def get_relic_combat_modifiers(relics: list[Relic]) -> RelicCombatModifiers:
+    """Aggregate combat-relevant effects from a list of relics."""
+    mods = RelicCombatModifiers()
+    for relic in relics:
+        e = relic.effects
+        if not e:
+            continue
+        mods.energy += e.get("energy", 0)
+        mods.strength += e.get("strength", 0)
+        mods.dexterity += e.get("dexterity", 0)
+        mods.draw += e.get("draw", 0)
+        mods.energy_turn1 += e.get("energy_turn1", 0)
+        mods.strength_turn1 += e.get("strength_turn1", 0)
+        mods.block_start += e.get("block_start", 0)
+        if e.get("vulnerable"):
+            mods.vulnerable = True
+        if e.get("weak"):
+            mods.weak = True
+        if "vuln_multiplier" in e:
+            mods.vuln_multiplier = e["vuln_multiplier"]
+        if "weak_multiplier" in e:
+            mods.weak_multiplier = e["weak_multiplier"]
+    return mods
 
 
 def draw_probability(
@@ -83,6 +126,8 @@ def expected_damage_output(
     strength: int = 0,
     vulnerable: bool = False,
     weak: bool = False,
+    vuln_multiplier: float = 1.5,
+    weak_multiplier: float = 0.75,
 ) -> float:
     """Rough expected damage from a random hand.
 
@@ -94,8 +139,8 @@ def expected_damage_output(
     effects or play-order optimisation — use the Simulator for complex
     scenarios.
     """
-    vuln_mult = 1.5 if vulnerable else 1.0
-    weak_mult = 0.75 if weak else 1.0
+    vuln_mult = vuln_multiplier if vulnerable else 1.0
+    weak_mult = weak_multiplier if weak else 1.0
     total_cards = deck.total_cards
     if total_cards == 0:
         return 0.0

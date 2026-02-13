@@ -24,7 +24,13 @@ from models import Card, CardType, Character, Deck, Rarity
 from models.enemy import Enemy, EnemyType
 from models.potion import Potion, PotionRarity
 from models.relic import Relic, RelicRarity
-from stats.probability import draw_probability, expected_block_output, expected_damage_output
+from stats.probability import (
+    RelicCombatModifiers,
+    draw_probability,
+    expected_block_output,
+    expected_damage_output,
+    get_relic_combat_modifiers,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -115,6 +121,22 @@ class AppData:
                     + [by_name["Eruption"]]
                     + [by_name["Vigilance"]])
         return []
+
+    def get_starter_relic(self, character: Character) -> Relic | None:
+        """Return the starter relic for a character."""
+        starter_names = {
+            Character.IRONCLAD: "Burning Blood",
+            Character.SILENT: "Ring of the Snake",
+            Character.DEFECT: "Cracked Core",
+            Character.WATCHER: "Pure Water",
+        }
+        name = starter_names.get(character)
+        if name is None:
+            return None
+        for r in self.relics:
+            if r.name == name:
+                return r
+        return None
 
     def cards_for_character(self, character: Character) -> list[Card]:
         """Return cards available to a character (their own + colorless + curses)."""
@@ -510,6 +532,7 @@ class DeckBuilderTab(ttk.Frame):
         super().__init__(parent)
         self._data = data
         self._deck_cards: list[Card] = []
+        self._selected_relics: list[Relic] = []
 
         # --- Top bar ---
         top = ttk.Frame(self)
@@ -529,12 +552,18 @@ class DeckBuilderTab(ttk.Frame):
         ttk.Button(top, text="Clear Deck",
                    command=self._clear_deck).pack(side=tk.LEFT, padx=4)
 
-        # --- Paned: catalog | deck ---
-        paned = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
-        paned.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        # --- Vertical paned: cards section | relic section ---
+        vpaned = ttk.PanedWindow(self, orient=tk.VERTICAL)
+        vpaned.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+
+        # === Cards section ===
+        cards_frame = ttk.Frame(vpaned)
+
+        card_paned = ttk.PanedWindow(cards_frame, orient=tk.HORIZONTAL)
+        card_paned.pack(fill=tk.BOTH, expand=True)
 
         # Left: card catalog
-        left = ttk.Frame(paned)
+        left = ttk.Frame(card_paned)
         ttk.Label(left, text="Card Catalog", font=("TkDefaultFont", 12, "bold")).pack(
             anchor=tk.W, padx=4, pady=(2, 0))
         self._catalog = FilterableTreeview(
@@ -562,10 +591,10 @@ class DeckBuilderTab(ttk.Frame):
         add_btn.pack(pady=4)
         self._catalog._tree.bind("<Double-1>", lambda e: self._add_selected())
 
-        paned.add(left, weight=1)
+        card_paned.add(left, weight=1)
 
         # Right: deck contents
-        right = ttk.Frame(paned)
+        right = ttk.Frame(card_paned)
         ttk.Label(right, text="Deck Contents", font=("TkDefaultFont", 12, "bold")).pack(
             anchor=tk.W, padx=4, pady=(2, 0))
 
@@ -596,7 +625,80 @@ class DeckBuilderTab(ttk.Frame):
         ttk.Label(right, textvariable=self._summary_var,
                   font=("TkDefaultFont", 11)).pack(anchor=tk.W, padx=6, pady=(0, 4))
 
-        paned.add(right, weight=1)
+        card_paned.add(right, weight=1)
+
+        vpaned.add(cards_frame, weight=3)
+
+        # === Relic section ===
+        relic_frame = ttk.Frame(vpaned)
+
+        relic_paned = ttk.PanedWindow(relic_frame, orient=tk.HORIZONTAL)
+        relic_paned.pack(fill=tk.BOTH, expand=True)
+
+        # Left: relic catalog
+        relic_left = ttk.Frame(relic_paned)
+        ttk.Label(relic_left, text="Relic Catalog",
+                  font=("TkDefaultFont", 12, "bold")).pack(
+            anchor=tk.W, padx=4, pady=(2, 0))
+        self._relic_catalog = FilterableTreeview(
+            relic_left,
+            columns=[
+                ("name", "Name", 160),
+                ("rarity", "Rarity", 80),
+                ("character", "Character", 80),
+            ],
+            items=self._data.relics,
+            item_to_row=lambda r: (r.name, r.rarity.name, r.character.value),
+            item_matches_filters=self._relic_catalog_filter,
+            detail_formatter=self._relic_detail,
+            filters=[
+                ("rarity", "Rarity", self._data.relic_rarities),
+                ("character", "Character", self._data.relic_characters),
+            ],
+        )
+        self._relic_catalog.pack(fill=tk.BOTH, expand=True)
+
+        relic_add_btn = ttk.Button(relic_left, text="Add Relic >>",
+                                   command=self._add_relic)
+        relic_add_btn.pack(pady=4)
+        self._relic_catalog._tree.bind("<Double-1>", lambda e: self._add_relic())
+
+        relic_paned.add(relic_left, weight=1)
+
+        # Right: selected relics
+        relic_right = ttk.Frame(relic_paned)
+        ttk.Label(relic_right, text="Selected Relics",
+                  font=("TkDefaultFont", 12, "bold")).pack(
+            anchor=tk.W, padx=4, pady=(2, 0))
+
+        relic_sel_frame = ttk.Frame(relic_right)
+        relic_sel_frame.pack(fill=tk.BOTH, expand=True, padx=4)
+
+        relic_sel_cols = [("name", "Name", 160), ("rarity", "Rarity", 80)]
+        self._relic_sel_tree = ttk.Treeview(
+            relic_sel_frame, columns=[c[0] for c in relic_sel_cols],
+            show="headings", selectmode="browse")
+        for col_id, heading, width in relic_sel_cols:
+            self._relic_sel_tree.heading(col_id, text=heading)
+            self._relic_sel_tree.column(col_id, width=width, minwidth=30)
+        relic_sel_vsb = ttk.Scrollbar(relic_sel_frame, orient=tk.VERTICAL,
+                                      command=self._relic_sel_tree.yview)
+        self._relic_sel_tree.configure(yscrollcommand=relic_sel_vsb.set)
+        self._relic_sel_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        relic_sel_vsb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        relic_remove_btn = ttk.Button(relic_right, text="<< Remove Relic",
+                                      command=self._remove_relic)
+        relic_remove_btn.pack(pady=4)
+        self._relic_sel_tree.bind("<Double-1>", lambda e: self._remove_relic())
+
+        self._relic_summary_var = tk.StringVar(value="Relics: 0")
+        ttk.Label(relic_right, textvariable=self._relic_summary_var,
+                  font=("TkDefaultFont", 11)).pack(anchor=tk.W, padx=6, pady=(0, 4))
+
+        relic_paned.add(relic_right, weight=1)
+
+        vpaned.add(relic_frame, weight=1)
 
     # --- Public API ---
 
@@ -605,6 +707,9 @@ class DeckBuilderTab(ttk.Frame):
 
     def get_deck_cards(self) -> list[Card]:
         return list(self._deck_cards)
+
+    def get_selected_relics(self) -> list[Relic]:
+        return list(self._selected_relics)
 
     # --- Internals ---
 
@@ -623,10 +728,18 @@ class DeckBuilderTab(ttk.Frame):
         char = self._selected_character()
         self._deck_cards = self._data.get_starter_deck_cards(char)
         self._refresh_deck_tree()
+        # Also load starter relic
+        self._selected_relics.clear()
+        starter = self._data.get_starter_relic(char)
+        if starter is not None:
+            self._selected_relics.append(starter)
+        self._refresh_relic_sel_tree()
 
     def _clear_deck(self) -> None:
         self._deck_cards.clear()
         self._refresh_deck_tree()
+        self._selected_relics.clear()
+        self._refresh_relic_sel_tree()
 
     def _add_selected(self) -> None:
         sel = self._catalog._tree.selection()
@@ -646,6 +759,25 @@ class DeckBuilderTab(ttk.Frame):
         if card is not None and card in self._deck_cards:
             self._deck_cards.remove(card)
             self._refresh_deck_tree()
+
+    def _add_relic(self) -> None:
+        sel = self._relic_catalog._tree.selection()
+        if not sel:
+            return
+        relic = self._relic_catalog._iid_to_item.get(sel[0])
+        if relic is not None and relic not in self._selected_relics:
+            self._selected_relics.append(relic)
+            self._refresh_relic_sel_tree()
+
+    def _remove_relic(self) -> None:
+        sel = self._relic_sel_tree.selection()
+        if not sel:
+            return
+        iid = sel[0]
+        relic = self._relic_iid_to_relic.get(iid)
+        if relic is not None and relic in self._selected_relics:
+            self._selected_relics.remove(relic)
+            self._refresh_relic_sel_tree()
 
     def _refresh_deck_tree(self) -> None:
         self._deck_tree.delete(*self._deck_tree.get_children())
@@ -686,6 +818,27 @@ class DeckBuilderTab(ttk.Frame):
         summary += f"  |  Avg cost: {avg_cost:.1f}"
         self._summary_var.set(summary)
 
+    def _refresh_relic_sel_tree(self) -> None:
+        self._relic_sel_tree.delete(*self._relic_sel_tree.get_children())
+        self._relic_iid_to_relic: dict[str, Relic] = {}
+
+        tag_even = False
+        for idx, relic in enumerate(sorted(self._selected_relics, key=lambda r: r.name)):
+            iid = str(idx)
+            tag = "even" if tag_even else "odd"
+            self._relic_sel_tree.insert("", tk.END, iid=iid,
+                                        values=(relic.name, relic.rarity.name),
+                                        tags=(tag,))
+            self._relic_iid_to_relic[iid] = relic
+            tag_even = not tag_even
+
+        self._relic_sel_tree.tag_configure("even", background=THEME["row_even"],
+                                           foreground=THEME["text"])
+        self._relic_sel_tree.tag_configure("odd", background=THEME["row_odd"],
+                                          foreground=THEME["text"])
+
+        self._relic_summary_var.set(f"Relics: {len(self._selected_relics)}")
+
     def _catalog_filter(self, card: Card, search: str, filters: dict[str, str]) -> bool:
         if search and search not in card.name.lower():
             return False
@@ -704,6 +857,30 @@ class DeckBuilderTab(ttk.Frame):
         if filters.get("rarity", "All") != "All" and card.rarity.name != filters["rarity"]:
             return False
         return True
+
+    @staticmethod
+    def _relic_catalog_filter(relic: Relic, search: str, filters: dict[str, str]) -> bool:
+        if search and search not in relic.name.lower():
+            return False
+        if filters.get("rarity", "All") != "All" and relic.rarity.name != filters["rarity"]:
+            return False
+        if filters.get("character", "All") != "All" and relic.character.value != filters["character"]:
+            return False
+        return True
+
+    @staticmethod
+    def _relic_detail(relic: Relic) -> str:
+        lines = [
+            relic.name,
+            f"Rarity: {relic.rarity.name}  |  Character: {relic.character.value}",
+            "",
+            relic.description,
+        ]
+        if relic.effects:
+            lines.append("")
+            lines.append("Effects: " + ", ".join(
+                f"{k}={v}" for k, v in relic.effects.items()))
+        return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -753,6 +930,10 @@ class ProbabilityTab(ttk.Frame):
         ttk.Checkbutton(row2, text="Weak", variable=self._weak).pack(
             side=tk.LEFT, padx=(0, 12))
 
+        self._turn1 = tk.BooleanVar(value=True)
+        ttk.Checkbutton(row2, text="Turn 1 mode", variable=self._turn1).pack(
+            side=tk.LEFT, padx=(0, 12))
+
         ttk.Button(row2, text="Recalculate", command=self._recalculate).pack(
             side=tk.RIGHT, padx=4)
 
@@ -784,7 +965,12 @@ class ProbabilityTab(ttk.Frame):
 
         self._block_var = tk.StringVar(value="")
         ttk.Label(out_frame, textvariable=self._block_var,
-                  font=("TkDefaultFont", 13)).pack(anchor=tk.W, padx=8, pady=(0, 8))
+                  font=("TkDefaultFont", 13)).pack(anchor=tk.W, padx=8, pady=(0, 4))
+
+        self._relic_info_var = tk.StringVar(value="")
+        ttk.Label(out_frame, textvariable=self._relic_info_var,
+                  font=("TkDefaultFont", 11),
+                  foreground=THEME["text_dim"]).pack(anchor=tk.W, padx=8, pady=(0, 8))
 
     def on_tab_selected(self) -> None:
         self._recalculate()
@@ -795,6 +981,7 @@ class ProbabilityTab(ttk.Frame):
             self._prob_tree.delete(*self._prob_tree.get_children())
             self._damage_var.set("No deck loaded. Use the Deck Builder tab first.")
             self._block_var.set("")
+            self._relic_info_var.set("")
             return
 
         deck = Deck(list(deck_cards))
@@ -804,6 +991,22 @@ class ProbabilityTab(ttk.Frame):
         dexterity = self._dexterity.get()
         vulnerable = self._vulnerable.get()
         weak = self._weak.get()
+        turn1 = self._turn1.get()
+
+        # Aggregate relic modifiers
+        relics = self._deck_builder.get_selected_relics()
+        mods = get_relic_combat_modifiers(relics)
+
+        # Apply relic modifiers
+        eff_energy = energy + mods.energy + (mods.energy_turn1 if turn1 else 0)
+        eff_strength = strength + mods.strength + (mods.strength_turn1 if turn1 else 0)
+        eff_dexterity = dexterity + mods.dexterity
+        eff_hand_size = hand_size + (mods.draw if turn1 else 0)
+        eff_vulnerable = vulnerable or mods.vulnerable
+        eff_weak = weak or mods.weak
+
+        vuln_mult = mods.vuln_multiplier if mods.vuln_multiplier is not None else 1.5
+        weak_mult = mods.weak_multiplier if mods.weak_multiplier is not None else 0.75
 
         # Draw probability table
         self._prob_tree.delete(*self._prob_tree.get_children())
@@ -811,7 +1014,7 @@ class ProbabilityTab(ttk.Frame):
         tag_even = False
         for card in sorted(counts.keys(), key=lambda c: c.name):
             copies = counts[card]
-            p = draw_probability(deck, card, draw_count=hand_size)
+            p = draw_probability(deck, card, draw_count=eff_hand_size)
             tag = "even" if tag_even else "odd"
             self._prob_tree.insert("", tk.END,
                                    values=(card.name, copies, f"{p:.1%}"),
@@ -824,21 +1027,59 @@ class ProbabilityTab(ttk.Frame):
                                      foreground=THEME["text"])
 
         # Expected damage & block
-        ed = expected_damage_output(deck, hand_size=hand_size, energy=energy,
-                                    strength=strength, vulnerable=vulnerable, weak=weak)
-        eb = expected_block_output(deck, hand_size=hand_size, energy=energy,
-                                   dexterity=dexterity)
+        ed = expected_damage_output(
+            deck, hand_size=eff_hand_size, energy=eff_energy,
+            strength=eff_strength, vulnerable=eff_vulnerable, weak=eff_weak,
+            vuln_multiplier=vuln_mult, weak_multiplier=weak_mult,
+        )
+        eb = expected_block_output(
+            deck, hand_size=eff_hand_size, energy=eff_energy,
+            dexterity=eff_dexterity,
+        )
 
-        params = f"hand={hand_size}, energy={energy}"
+        params = f"hand={eff_hand_size}, energy={eff_energy}"
         self._damage_var.set(
             f"E[damage] = {ed:.1f}   "
-            f"({params}, str={strength}"
-            f"{', vulnerable' if vulnerable else ''})"
+            f"({params}, str={eff_strength}"
+            f"{', vulnerable' if eff_vulnerable else ''})"
         )
         self._block_var.set(
             f"E[block]    = {eb:.1f}   "
-            f"({params}, dex={dexterity})"
+            f"({params}, dex={eff_dexterity})"
         )
+
+        # Relic modifier info
+        relic_parts: list[str] = []
+        if mods.energy:
+            relic_parts.append(f"energy +{mods.energy}")
+        if mods.energy_turn1 and turn1:
+            relic_parts.append(f"energy T1 +{mods.energy_turn1}")
+        if mods.strength:
+            relic_parts.append(f"str +{mods.strength}")
+        if mods.strength_turn1 and turn1:
+            relic_parts.append(f"str T1 +{mods.strength_turn1}")
+        if mods.dexterity:
+            relic_parts.append(f"dex +{mods.dexterity}")
+        if mods.draw and turn1:
+            relic_parts.append(f"draw +{mods.draw}")
+        if mods.vulnerable:
+            relic_parts.append("vulnerable")
+        if mods.weak:
+            relic_parts.append("weak")
+        if mods.block_start:
+            relic_parts.append(f"start block +{mods.block_start}")
+        if mods.vuln_multiplier is not None:
+            relic_parts.append(f"vuln x{mods.vuln_multiplier}")
+        if mods.weak_multiplier is not None:
+            relic_parts.append(f"weak x{mods.weak_multiplier}")
+
+        if relic_parts:
+            self._relic_info_var.set(
+                f"Relic modifiers: {', '.join(relic_parts)}"
+                f"   {'[Turn 1]' if turn1 else '[Ongoing]'}"
+            )
+        else:
+            self._relic_info_var.set("")
 
 
 # ---------------------------------------------------------------------------
