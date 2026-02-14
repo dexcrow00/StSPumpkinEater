@@ -1001,9 +1001,11 @@ class ProbabilityTab(ttk.Frame):
         eff_energy = energy + mods.energy + (mods.energy_turn1 if turn1 else 0)
         eff_strength = strength + mods.strength + (mods.strength_turn1 if turn1 else 0)
         eff_dexterity = dexterity + mods.dexterity
-        eff_hand_size = hand_size + (mods.draw if turn1 else 0)
-        eff_vulnerable = vulnerable or mods.vulnerable
-        eff_weak = weak or mods.weak
+        eff_hand_size = hand_size + mods.draw + (mods.draw_turn1 if turn1 else 0)
+        eff_vulnerable = (vulnerable or mods.vulnerable
+                          or (mods.vulnerable_turn1 if turn1 else False))
+        eff_weak = (weak or mods.weak
+                    or (mods.weak_turn1 if turn1 else False))
 
         vuln_mult = mods.vuln_multiplier if mods.vuln_multiplier is not None else 1.5
         weak_mult = mods.weak_multiplier if mods.weak_multiplier is not None else 0.75
@@ -1032,6 +1034,15 @@ class ProbabilityTab(ttk.Frame):
             strength=eff_strength, vulnerable=eff_vulnerable, weak=eff_weak,
             vuln_multiplier=vuln_mult, weak_multiplier=weak_mult,
         )
+        # Akabeko-style flat damage: applies to first attack on turn 1,
+        # so add it if there's at least one attack in the deck
+        flat_dmg = 0
+        if turn1 and mods.damage_turn1:
+            has_attack = any(c.card_type == CardType.ATTACK for c in deck_cards)
+            if has_attack:
+                flat_dmg = mods.damage_turn1
+        ed += flat_dmg
+
         eb = expected_block_output(
             deck, hand_size=eff_hand_size, energy=eff_energy,
             dexterity=eff_dexterity,
@@ -1041,7 +1052,8 @@ class ProbabilityTab(ttk.Frame):
         self._damage_var.set(
             f"E[damage] = {ed:.1f}   "
             f"({params}, str={eff_strength}"
-            f"{', vulnerable' if eff_vulnerable else ''})"
+            f"{', vulnerable' if eff_vulnerable else ''}"
+            f"{f', +{flat_dmg} flat' if flat_dmg else ''})"
         )
         self._block_var.set(
             f"E[block]    = {eb:.1f}   "
@@ -1060,13 +1072,21 @@ class ProbabilityTab(ttk.Frame):
             relic_parts.append(f"str T1 +{mods.strength_turn1}")
         if mods.dexterity:
             relic_parts.append(f"dex +{mods.dexterity}")
-        if mods.draw and turn1:
+        if mods.draw:
             relic_parts.append(f"draw +{mods.draw}")
+        if mods.draw_turn1 and turn1:
+            relic_parts.append(f"draw T1 +{mods.draw_turn1}")
         if mods.vulnerable:
             relic_parts.append("vulnerable")
+        if mods.vulnerable_turn1 and turn1:
+            relic_parts.append("vulnerable T1")
         if mods.weak:
             relic_parts.append("weak")
-        if mods.block_start:
+        if mods.weak_turn1 and turn1:
+            relic_parts.append("weak T1")
+        if mods.damage_turn1 and turn1:
+            relic_parts.append(f"dmg T1 +{mods.damage_turn1}")
+        if mods.block_start and turn1:
             relic_parts.append(f"start block +{mods.block_start}")
         if mods.vuln_multiplier is not None:
             relic_parts.append(f"vuln x{mods.vuln_multiplier}")

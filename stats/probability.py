@@ -16,14 +16,18 @@ class RelicCombatModifiers:
     energy: int = 0
     strength: int = 0
     dexterity: int = 0
-    draw: int = 0
+    draw: int = 0              # extra cards drawn every turn
+    draw_turn1: int = 0        # extra cards drawn turn 1 only
     energy_turn1: int = 0
     strength_turn1: int = 0
-    vulnerable: bool = False
-    weak: bool = False
+    vulnerable: bool = False           # enemy always vulnerable
+    weak: bool = False                 # enemy always weak
+    vulnerable_turn1: bool = False     # enemy vulnerable turn 1 only
+    weak_turn1: bool = False           # enemy weak turn 1 only
+    damage_turn1: int = 0      # flat bonus damage on first attack (turn 1)
     vuln_multiplier: float | None = None
     weak_multiplier: float | None = None
-    block_start: int = 0
+    block_start: int = 0       # block at start of combat (turn 1)
 
 
 def get_relic_combat_modifiers(relics: list[Relic]) -> RelicCombatModifiers:
@@ -37,13 +41,19 @@ def get_relic_combat_modifiers(relics: list[Relic]) -> RelicCombatModifiers:
         mods.strength += e.get("strength", 0)
         mods.dexterity += e.get("dexterity", 0)
         mods.draw += e.get("draw", 0)
+        mods.draw_turn1 += e.get("draw_turn1", 0)
         mods.energy_turn1 += e.get("energy_turn1", 0)
         mods.strength_turn1 += e.get("strength_turn1", 0)
         mods.block_start += e.get("block_start", 0)
+        mods.damage_turn1 += e.get("damage_turn1", 0)
         if e.get("vulnerable"):
             mods.vulnerable = True
+        if e.get("vulnerable_turn1"):
+            mods.vulnerable_turn1 = True
         if e.get("weak"):
             mods.weak = True
+        if e.get("weak_turn1"):
+            mods.weak_turn1 = True
         if "vuln_multiplier" in e:
             mods.vuln_multiplier = e["vuln_multiplier"]
         if "weak_multiplier" in e:
