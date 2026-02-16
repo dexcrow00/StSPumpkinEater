@@ -107,6 +107,36 @@ def _expected_bonus_energy(deck: Deck, hand_size: int) -> float:
     return bonus
 
 
+def _expected_bonus_draw(deck: Deck, hand_size: int) -> float:
+    """Expected extra cards drawn from draw-effect cards in the hand.
+
+    For each card with a top-level ``draw`` effect, computes the expected
+    copies drawn (hypergeometric mean = K * n / N) multiplied by the draw
+    amount.  The result can be added to hand_size for a first-order
+    approximation of effective hand size, since:
+
+        E[copies in hand + bonus] = K * (n + bonus) / N
+
+    which holds because bonus draws come from the remaining N - n cards.
+    Conditional draw and discard side-effects are ignored.
+    """
+    total_cards = deck.total_cards
+    if total_cards == 0:
+        return 0.0
+
+    bonus = 0.0
+    for card, copies in deck.card_counts().items():
+        if card.card_type in (CardType.CURSE, CardType.STATUS):
+            continue
+        draw_gain = card.effects.get("draw", 0)
+        if not isinstance(draw_gain, (int, float)) or draw_gain <= 0:
+            continue
+        e_copies = copies * hand_size / total_cards
+        bonus += e_copies * draw_gain
+
+    return bonus
+
+
 def _energy_scale(deck: Deck, hand_size: int, energy: float) -> float:
     """Ratio to scale expected output when drawn cards exceed the energy budget.
 
@@ -155,7 +185,11 @@ def expected_damage_output(
     if total_cards == 0:
         return 0.0
 
+    eff_hand = hand_size + _expected_bonus_draw(deck, hand_size)
     effective_energy = energy + _expected_bonus_energy(deck, hand_size)
+    # Energy demand uses initial hand_size: draw cards expand the card pool
+    # without increasing energy need (their own cost is already in the demand,
+    # and the drawn cards replace the draw card's "slot").
     scale = _energy_scale(deck, hand_size, effective_energy)
 
     expected = 0.0
@@ -169,7 +203,7 @@ def expected_damage_output(
         if cost > energy:
             continue
 
-        e_copies = copies * hand_size / total_cards
+        e_copies = copies * eff_hand / total_cards
 
         hits = card.effects.get("hits", 1)
         if not isinstance(hits, int):
@@ -199,6 +233,7 @@ def expected_block_output(
     if total_cards == 0:
         return 0.0
 
+    eff_hand = hand_size + _expected_bonus_draw(deck, hand_size)
     effective_energy = energy + _expected_bonus_energy(deck, hand_size)
     scale = _energy_scale(deck, hand_size, effective_energy)
 
@@ -211,7 +246,7 @@ def expected_block_output(
         if cost > energy:
             continue
 
-        e_copies = copies * hand_size / total_cards
+        e_copies = copies * eff_hand / total_cards
 
         block = base_block + dexterity
         expected += e_copies * max(block, 0)

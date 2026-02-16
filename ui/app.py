@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import tkinter as tk
+from dataclasses import dataclass
 from pathlib import Path
 from tkinter import ttk
 from typing import Any, Callable
@@ -41,6 +42,36 @@ _COST_DISPLAY = {-1: "X", -2: "U"}
 
 def _cost_str(cost: int) -> str:
     return _COST_DISPLAY.get(cost, str(cost))
+
+
+@dataclass
+class DeckEntry:
+    """Pairs a Card with an upgrade flag for the deck builder."""
+
+    card: Card
+    upgraded: bool = False
+
+    def resolve(self) -> Card:
+        """Return a Card with active effects/cost based on upgrade state."""
+        if not self.upgraded or not self.card.upgraded_effects:
+            return self.card
+        return Card(
+            name=self.card.name + "+",
+            card_type=self.card.card_type,
+            character=self.card.character,
+            rarity=self.card.rarity,
+            cost=self.card.effective_upgraded_cost,
+            description=self.card.upgraded_description or self.card.description,
+            effects=self.card.upgraded_effects,
+        )
+
+    @property
+    def display_name(self) -> str:
+        return self.card.name + ("+" if self.upgraded else "")
+
+    @property
+    def active_cost(self) -> int:
+        return self.card.effective_upgraded_cost if self.upgraded else self.card.cost
 
 
 # ---------------------------------------------------------------------------
@@ -531,7 +562,7 @@ class DeckBuilderTab(ttk.Frame):
     def __init__(self, parent: tk.Widget, data: AppData) -> None:
         super().__init__(parent)
         self._data = data
-        self._deck_cards: list[Card] = []
+        self._deck_entries: list[DeckEntry] = []
         self._selected_relics: list[Relic] = []
 
         # --- Top bar ---
@@ -615,9 +646,12 @@ class DeckBuilderTab(ttk.Frame):
         self._deck_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         deck_vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        remove_btn = ttk.Button(right, text="<< Remove from Deck",
-                                command=self._remove_selected)
-        remove_btn.pack(pady=4)
+        btn_row = ttk.Frame(right)
+        btn_row.pack(pady=4)
+        ttk.Button(btn_row, text="<< Remove from Deck",
+                   command=self._remove_selected).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Button(btn_row, text="Toggle Upgrade",
+                   command=self._toggle_upgrade).pack(side=tk.LEFT, padx=(4, 0))
         self._deck_tree.bind("<Double-1>", lambda e: self._remove_selected())
 
         # Summary
@@ -703,10 +737,10 @@ class DeckBuilderTab(ttk.Frame):
     # --- Public API ---
 
     def get_deck(self) -> Deck:
-        return Deck(list(self._deck_cards))
+        return Deck([e.resolve() for e in self._deck_entries])
 
     def get_deck_cards(self) -> list[Card]:
-        return list(self._deck_cards)
+        return [e.resolve() for e in self._deck_entries]
 
     def get_selected_relics(self) -> list[Relic]:
         return list(self._selected_relics)
@@ -726,7 +760,7 @@ class DeckBuilderTab(ttk.Frame):
 
     def _load_starter(self) -> None:
         char = self._selected_character()
-        self._deck_cards = self._data.get_starter_deck_cards(char)
+        self._deck_entries = [DeckEntry(card=c) for c in self._data.get_starter_deck_cards(char)]
         self._refresh_deck_tree()
         # Also load starter relic
         self._selected_relics.clear()
@@ -736,7 +770,7 @@ class DeckBuilderTab(ttk.Frame):
         self._refresh_relic_sel_tree()
 
     def _clear_deck(self) -> None:
-        self._deck_cards.clear()
+        self._deck_entries.clear()
         self._refresh_deck_tree()
         self._selected_relics.clear()
         self._refresh_relic_sel_tree()
@@ -747,7 +781,7 @@ class DeckBuilderTab(ttk.Frame):
             return
         item = self._catalog._iid_to_item.get(sel[0])
         if item is not None:
-            self._deck_cards.append(item)
+            self._deck_entries.append(DeckEntry(card=item))
             self._refresh_deck_tree()
 
     def _remove_selected(self) -> None:
@@ -755,10 +789,33 @@ class DeckBuilderTab(ttk.Frame):
         if not sel:
             return
         iid = sel[0]
-        card = self._deck_iid_to_card.get(iid)
-        if card is not None and card in self._deck_cards:
-            self._deck_cards.remove(card)
-            self._refresh_deck_tree()
+        key = self._deck_iid_to_key.get(iid)
+        if key is None:
+            return
+        card, upgraded = key
+        for i, entry in enumerate(self._deck_entries):
+            if entry.card == card and entry.upgraded == upgraded:
+                self._deck_entries.pop(i)
+                break
+        self._refresh_deck_tree()
+
+    def _toggle_upgrade(self) -> None:
+        sel = self._deck_tree.selection()
+        if not sel:
+            return
+        key = self._deck_iid_to_key.get(sel[0])
+        if key is None:
+            return
+        card, upgraded = key
+        # Curses and statuses cannot be upgraded
+        if card.card_type in (CardType.CURSE, CardType.STATUS):
+            return
+        if not card.upgraded_effects:
+            return
+        for entry in self._deck_entries:
+            if entry.card == card and entry.upgraded == upgraded:
+                entry.upgraded = not entry.upgraded
+        self._refresh_deck_tree()
 
     def _add_relic(self) -> None:
         sel = self._relic_catalog._tree.selection()
@@ -781,20 +838,26 @@ class DeckBuilderTab(ttk.Frame):
 
     def _refresh_deck_tree(self) -> None:
         self._deck_tree.delete(*self._deck_tree.get_children())
-        self._deck_iid_to_card: dict[str, Card] = {}
+        self._deck_iid_to_key: dict[str, tuple[Card, bool]] = {}
 
-        # Group by card identity
+        # Group by (card, upgraded)
         from collections import Counter
-        counts: Counter[Card] = Counter(self._deck_cards)
+        counts: Counter[tuple[Card, bool]] = Counter(
+            (e.card, e.upgraded) for e in self._deck_entries
+        )
         tag_even = False
-        for idx, (card, qty) in enumerate(sorted(counts.items(), key=lambda x: x[0].name)):
+        for idx, ((card, upgraded), qty) in enumerate(
+            sorted(counts.items(), key=lambda x: (x[0][0].name, x[0][1]))
+        ):
             iid = str(idx)
             tag = "even" if tag_even else "odd"
+            display_name = card.name + ("+" if upgraded else "")
+            cost = card.effective_upgraded_cost if upgraded else card.cost
             self._deck_tree.insert("", tk.END, iid=iid,
-                                   values=(card.name, qty, card.card_type.name,
-                                           _cost_str(card.cost)),
+                                   values=(display_name, qty, card.card_type.name,
+                                           _cost_str(cost)),
                                    tags=(tag,))
-            self._deck_iid_to_card[iid] = card
+            self._deck_iid_to_key[iid] = (card, upgraded)
             tag_even = not tag_even
 
         self._deck_tree.tag_configure("even", background=THEME["row_even"],
@@ -803,19 +866,21 @@ class DeckBuilderTab(ttk.Frame):
                                      foreground=THEME["text"])
 
         # Summary
-        total = len(self._deck_cards)
-        attacks = sum(1 for c in self._deck_cards if c.card_type == CardType.ATTACK)
-        skills = sum(1 for c in self._deck_cards if c.card_type == CardType.SKILL)
-        powers = sum(1 for c in self._deck_cards if c.card_type == CardType.POWER)
-        curses = sum(1 for c in self._deck_cards if c.card_type == CardType.CURSE)
-        costs = [c.cost for c in self._deck_cards if c.cost >= 0]
+        total = len(self._deck_entries)
+        attacks = sum(1 for e in self._deck_entries if e.card.card_type == CardType.ATTACK)
+        skills = sum(1 for e in self._deck_entries if e.card.card_type == CardType.SKILL)
+        powers = sum(1 for e in self._deck_entries if e.card.card_type == CardType.POWER)
+        curses = sum(1 for e in self._deck_entries if e.card.card_type == CardType.CURSE)
+        costs = [e.active_cost for e in self._deck_entries if e.active_cost >= 0]
         avg_cost = sum(costs) / len(costs) if costs else 0.0
+        upgraded_count = sum(1 for e in self._deck_entries if e.upgraded)
 
         summary = (f"Deck: {total} cards  |  "
                    f"Attacks: {attacks}  Skills: {skills}  Powers: {powers}")
         if curses:
             summary += f"  Curses: {curses}"
         summary += f"  |  Avg cost: {avg_cost:.1f}"
+        summary += f"  |  Upgraded: {upgraded_count}/{total}"
         self._summary_var.set(summary)
 
     def _refresh_relic_sel_tree(self) -> None:
